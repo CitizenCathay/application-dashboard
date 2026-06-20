@@ -53,7 +53,7 @@ function JobForm({
   const fields: [string, string][] = [
     ["company", "Company"], ["role", "Role"], ["location", "Location"],
     ["salary", "Salary"], ["job_type", "Job Type"], ["deadline", "Deadline"],
-    ["tech_stack", "Tech Stack (comma separated)"],
+    ["tech_stack", "Tech Stack (comma separated)"], ["url", "Job Posting URL"],
   ];
 
   return (
@@ -196,6 +196,7 @@ function EditJobModal({
     deadline: job.deadline || "",
     tech_stack: (job.tech_stack || []).join(", "),
     summary: job.summary || "",
+    url: job.url || "",
   });
 
   const handleSave = () => {
@@ -207,6 +208,7 @@ function EditJobModal({
       job_type: form.job_type || null,
       deadline: form.deadline || null,
       summary: form.summary || null,
+      url: form.url || null,
       tech_stack: form.tech_stack
         ? form.tech_stack.split(",").map((s) => s.trim()).filter(Boolean)
         : [],
@@ -257,7 +259,18 @@ function JobRow({
           style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", cursor: "pointer", flexWrap: "wrap", gap: 8 }}
         >
           <div>
-            <div style={{ fontSize: 15, fontWeight: 600 }}>{job.company}</div>
+            <div style={{ fontSize: 15, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+              {job.company}
+              {job.url && (
+                <a href={job.url} target="_blank" rel="noreferrer" title="View job posting" onClick={e => e.stopPropagation()} style={{ color: "#aaa", display: "inline-flex", lineHeight: 1 }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                    <polyline points="15 3 21 3 21 9"/>
+                    <line x1="10" y1="14" x2="21" y2="3"/>
+                  </svg>
+                </a>
+              )}
+            </div>
             <div style={{ fontSize: 13, color: "#555", marginTop: 1 }}>{job.role}</div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
