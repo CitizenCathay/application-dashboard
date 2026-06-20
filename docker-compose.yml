@@ -1,0 +1,63 @@
+services:
+  # ── Ollama: runs the local LLM ────────────────────────────────
+  ollama:
+    image: ollama/ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  # ── One-shot: pulls the model on first run ────────────────────
+  ollama-pull:
+    image: curlimages/curl
+    depends_on:
+      - ollama
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo "Waiting for Ollama to be ready..."
+        until curl -s http://ollama:11434 > /dev/null; do sleep 1; done
+        echo "Pulling llama3.2 (this downloads ~2GB the first time)..."
+        curl http://ollama:11434/api/pull -d '{"name":"llama3.2"}'
+        echo "Model ready."
+    restart: "no"
+
+  # ── Backend: FastAPI ──────────────────────────────────────────
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - OLLAMA_URL=http://ollama:11434
+      - OLLAMA_MODEL=llama3.2
+      - DATABASE_URL=sqlite:///./huntboard.db
+      - CORS_ORIGINS=http://localhost:5173
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - ollama
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # ── Frontend: React + Vite ────────────────────────────────────
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_PROXY_TARGET=http://backend:8000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    command: npm run dev -- --host
+
+volumes:
+  ollama_data:
